@@ -16,7 +16,7 @@
         <section>
             <p>Welcome! This tool allows you to input a recursive formula (in a ternary format), identify its variables, 
             set base cases, and visualize the computation of the function. Use it to understand how dynamic programming 
-            (memoization or tabulation) optimizes repetitive recursive calls.</p>
+            (memoization or top-down approaches) optimizes repetitive recursive calls.</p>
         </section>
 
         <!-- Dropdown for selecting formula type (currently only custom) -->
@@ -79,10 +79,10 @@
                 </div>
                 <div>
                     <label>Solving Method:</label><br>
-                    <input type="radio" id="bottom-up" name="solving-method" value="bottom-up" checked>
-                    <label for="bottom-up">Bottom-up (Tabulation)</label><br>
-                    <input type="radio" id="top-down" name="solving-method" value="top-down">
-                    <label for="top-down">Top-down (Memoization)</label>
+                    <input type="radio" id="top-down" name="solving-method" value="top-down" checked>
+                    <label for="top-down">Top-down (Memoization / Recursion)</label><br>
+                    <input type="radio" id="bottom-up" name="solving-method" value="bottom-up">
+                    <label for="bottom-up">Bottom-up (Tabulation)</label>
                 </div>
             <% } %>
         </section>
@@ -99,7 +99,7 @@
         <!-- Visualization area -->
         <section id="visualization-section" style="display: none;">
             <h2>Visualization</h2>
-            <p>Below is a representation of how the function breaks down into subproblems or how the DP table is filled.</p>
+            <p>Below is a step-by-step representation of the call stack as the recursion unfolds.</p>
             <div id="visualization-container"></div>
         </section>
     </main>

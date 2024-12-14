@@ -33,7 +33,6 @@ function parseRecursiveFormula(formula) {
     const rawVariables = [];
 
     while ((variableMatch = variableRegex.exec(formula)) !== null) {
-        // variableMatch[1] might be something like "n-1", "n-2", or "n,k-1"
         const params = variableMatch[1].split(',').map(v => v.trim());
         params.forEach(p => {
             // Remove digits and arithmetic operators
@@ -44,7 +43,6 @@ function parseRecursiveFormula(formula) {
         });
     }
 
-    // If no variables found, return an error
     if (rawVariables.length === 0) {
         return { error: 'No variables could be extracted from the formula. Ensure you use a function call like F(n-1).' };
     }
@@ -57,7 +55,7 @@ function parseRecursiveFormula(formula) {
     };
 }
 
-// Solve recursive formula
+// Enhance top-down solve to produce steps
 function solveRecursive(formula, baseCases, parameters, solvingMethod, maxRecursions) {
     const parsed = parseRecursiveFormula(formula);
 
@@ -67,55 +65,101 @@ function solveRecursive(formula, baseCases, parameters, solvingMethod, maxRecurs
 
     const { stoppingCondition, stoppingValue, recursiveExpression, variables } = parsed;
 
+    const parsedBaseCases = baseCases
+        ? baseCases
+            .split(',')
+            .map(c => c.split('=').map(v => v.trim()))
+            .reduce((acc, [key, value]) => {
+              const numVal = isNaN(value) ? value : parseInt(value, 10);
+              // Remove 'F(' at the start and ')' at the end to extract just the argument(s)
+              const cleanedKey = key.replace(/^F\(|\)$/g, '');
+              acc[cleanedKey] = numVal;
+              return acc;
+            }, {})
+        : {};
+
+    // Steps array to record the stack state at each stage
+    const steps = [];
+
+    const parameterKeys = Object.keys(parameters);
+    const parameterValues = Object.values(parameters);
+
+    // Create a wrapper that simulates the recursion and records steps
     const recursiveFunction = new Function(
         'stoppingCondition',
         'stoppingValue',
         'recursiveExpression',
         'parsedBaseCases',
         'maxRecursions',
-        ...Object.keys(parameters),
+        'steps',
+        ...parameterKeys,
         `
-        const memo = {};
-        let recursionDepth = 0;
-
-        return function F(${variables.join(',')}) {
-            const key = \`${variables.join(',')}\`;
-
+          const memo = {};
+          let recursionDepth = 0;
+      
+          function recordStep(stackArray, action, resolvedValue = null) {
+            steps.push({
+              stack: stackArray.map(s => ({ symbolic: s.symbolic, concrete: s.concrete })),
+              action,
+              resolvedValue
+            });
+          }
+      
+          const callStack = [];
+      
+          function F(${variables.join(',')}) {
+            const key = [${variables.join(',')}].join(','); // Use runtime values for the key
+            const symbolicCall = 'F(${variables.join(",")})';
+            const concreteCall = 'F(' + [${variables.join(',')}].join(',') + ')';
+      
+            callStack.push({ symbolic: symbolicCall, concrete: concreteCall });
+            recordStep(callStack, 'push');
+      
             if (maxRecursions !== null && maxRecursions !== undefined) {
-                if (recursionDepth >= maxRecursions) {
-                    throw new Error('Max recursion depth exceeded. Increase it or check your formula.');
-                }
-                recursionDepth++;
+              if (recursionDepth >= maxRecursions) {
+                throw new Error('Max recursion depth exceeded. Increase it or check your formula.');
+              }
+              recursionDepth++;
             }
-
-            if (memo[key] !== undefined) return memo[key];
-
+      
+            // If in memo
+            if (memo[key] !== undefined) {
+              const value = memo[key];
+              callStack.pop();
+              recordStep(callStack, 'pop', value);
+              return value;
+            }
+      
             // Check condition
             if (eval(stoppingCondition)) {
-                return memo[key] = eval(stoppingValue);
+              const val = eval(stoppingValue);
+              memo[key] = val;
+              callStack.pop();
+              recordStep(callStack, 'pop', val);
+              return val;
             }
-
+      
             // Check base cases
             if (parsedBaseCases.hasOwnProperty(key)) {
-                return memo[key] = parsedBaseCases[key];
+              const val = parsedBaseCases[key];
+              memo[key] = val;
+              callStack.pop();
+              recordStep(callStack, 'pop', val);
+              return val;
             }
-
-            // Recursive calculation
-            return memo[key] = eval(recursiveExpression);
-        };
-    `
-    );
-
-    const parsedBaseCases = baseCases
-        ? baseCases
-            .split(',')
-            .map((c) => c.split('=').map((v) => v.trim()))
-            .reduce((acc, [key, value]) => {
-                const numVal = isNaN(value) ? value : parseInt(value, 10);
-                acc[key] = numVal;
-                return acc;
-            }, {})
-        : {};
+      
+            // Compute recursively
+            const val = eval(recursiveExpression);
+            memo[key] = val;
+            callStack.pop();
+            recordStep(callStack, 'pop', val);
+            return val;
+          };
+      
+          return F(...Object.values(arguments).slice(6));
+        `
+      );
+      
 
     const F = recursiveFunction(
         stoppingCondition,
@@ -123,15 +167,16 @@ function solveRecursive(formula, baseCases, parameters, solvingMethod, maxRecurs
         recursiveExpression,
         parsedBaseCases,
         maxRecursions || null,
-        ...Object.values(parameters)
+        steps,
+        ...parameterValues
     );
 
     if (solvingMethod === 'top-down') {
-        const result = F(...Object.values(parameters));
-        return { result, steps: [] };
+        const result = F;
+        return { result, steps };
     } else if (solvingMethod === 'bottom-up') {
-        // Implement bottom-up method if desired
-        return { result: 'Bottom-up not implemented yet.' };
+        // Stub for bottom-up
+        return { result: 'Bottom-up not implemented yet.', steps: [] };
     }
 
     throw new Error('Invalid solving method chosen.');

@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const restartButton = document.getElementById('restart-button');
     const viewStepButton = document.getElementById('view-step-button');
 
+    let steps = [];
+    let currentStepIndex = -1;
+
     // After user submits formula, parse it and dynamically display variable inputs
     submitFormulaButton.addEventListener('click', async () => {
         const formula = recursiveFormulaInput.value.trim();
@@ -36,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
             parametersSection.style.display = 'none';
             controlsSection.style.display = 'none';
             visualizationSection.style.display = 'none';
+            visualizationContainer.innerHTML = '';
 
             if (result.variables && result.variables.length > 0) {
                 // Create parameter inputs
@@ -76,30 +80,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 methodDiv.appendChild(methodLabel);
                 methodDiv.appendChild(document.createElement('br'));
 
-                const bottomUpRadio = document.createElement('input');
-                bottomUpRadio.type = 'radio';
-                bottomUpRadio.id = 'bottom-up';
-                bottomUpRadio.name = 'solving-method';
-                bottomUpRadio.value = 'bottom-up';
-                bottomUpRadio.checked = true;
-                const bottomUpLabel = document.createElement('label');
-                bottomUpLabel.setAttribute('for', 'bottom-up');
-                bottomUpLabel.textContent = 'Bottom-up (Tabulation)';
-
                 const topDownRadio = document.createElement('input');
                 topDownRadio.type = 'radio';
                 topDownRadio.id = 'top-down';
                 topDownRadio.name = 'solving-method';
                 topDownRadio.value = 'top-down';
+                topDownRadio.checked = true;
                 const topDownLabel = document.createElement('label');
                 topDownLabel.setAttribute('for', 'top-down');
-                topDownLabel.textContent = 'Top-down (Memoization)';
+                topDownLabel.textContent = 'Top-down (Memoization / Recursion)';
 
-                methodDiv.appendChild(bottomUpRadio);
-                methodDiv.appendChild(bottomUpLabel);
-                methodDiv.appendChild(document.createElement('br'));
+                const bottomUpRadio = document.createElement('input');
+                bottomUpRadio.type = 'radio';
+                bottomUpRadio.id = 'bottom-up';
+                bottomUpRadio.name = 'solving-method';
+                bottomUpRadio.value = 'bottom-up';
+                const bottomUpLabel = document.createElement('label');
+                bottomUpLabel.setAttribute('for', 'bottom-up');
+                bottomUpLabel.textContent = 'Bottom-up (Tabulation)';
+
                 methodDiv.appendChild(topDownRadio);
                 methodDiv.appendChild(topDownLabel);
+                methodDiv.appendChild(document.createElement('br'));
+                methodDiv.appendChild(bottomUpRadio);
+                methodDiv.appendChild(bottomUpLabel);
 
                 parametersSection.appendChild(methodDiv);
 
@@ -115,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Compute the full result immediately and display
+    // Compute the full result immediately and display steps
     viewFullButton.addEventListener('click', async () => {
         const formula = recursiveFormulaInput.value.trim();
         const baseCases = baseCasesInput.value.trim();
@@ -143,11 +147,58 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = await response.json();
-            visualizationContainer.innerHTML = `<p>Final Result: ${result.result}</p><p>(Steps visualization not yet implemented)</p>`;
+            steps = result.steps || [];
+            currentStepIndex = -1;
+
+            // Show final result at the end
+            visualizationContainer.innerHTML = `<p>Final Result: ${result.result}</p>`;
+
+            // If you want, you can also visualize the steps now or just rely on "View Next Step"
+            // For simplicity, we just log them here.
+            console.log('All Steps:', steps);
         } catch (error) {
             console.error(error);
             alert('Error solving the formula.');
         }
+    });
+
+    viewStepButton.addEventListener('click', () => {
+        // Move to the next step and display the stack state
+        if (steps.length === 0) {
+            alert('No steps recorded. Please compute first.');
+            return;
+        }
+
+        currentStepIndex++;
+        if (currentStepIndex >= steps.length) {
+            alert('No more steps.');
+            currentStepIndex = steps.length - 1;
+            return;
+        }
+
+        const step = steps[currentStepIndex];
+        // Clear the container
+        visualizationContainer.innerHTML = '';
+
+        const stepInfo = document.createElement('div');
+        stepInfo.innerHTML = `<p>Step ${currentStepIndex + 1}/${steps.length}: Action = ${step.action}${
+            step.resolvedValue !== null ? ', Resolved Value = ' + step.resolvedValue : ''
+        }</p>`;
+
+        const stackUl = document.createElement('ul');
+        stackUl.innerHTML = '<strong>Current Stack (top at the end):</strong>';
+        step.stack.forEach(callFrame => {
+            const li = document.createElement('li');
+            // You might show either symbolic or concrete representation:
+            // Symbolic: callFrame.symbolic (e.g. "F(n)")
+            // Concrete: callFrame.concrete (e.g. "F(5)")
+            // Here, let's show the concrete form:
+            li.textContent = callFrame.concrete;
+            stackUl.appendChild(li);
+        });
+
+        visualizationContainer.appendChild(stepInfo);
+        visualizationContainer.appendChild(stackUl);
     });
 
     restartButton.addEventListener('click', () => {
@@ -158,10 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         controlsSection.style.display = 'none';
         visualizationSection.style.display = 'none';
         visualizationContainer.innerHTML = '';
-    });
-
-    viewStepButton.addEventListener('click', () => {
-        // Placeholder for step-by-step visualization if implemented
-        alert('Step-by-step visualization not yet implemented.');
+        steps = [];
+        currentStepIndex = -1;
     });
 });
