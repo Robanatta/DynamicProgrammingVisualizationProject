@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Programming Visualization Tool</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Dynamic Programming Visualization Tool</h1>
+    </header>
+
+    <main>
+        <!-- Section explaining the purpose -->
+        <section>
+            <p>Welcome! This tool allows you to input a recursive formula (in a ternary format), identify its variables, 
+            set base cases, and visualize the computation of the function. Use it to understand how dynamic programming 
+            (memoization or tabulation) optimizes repetitive recursive calls.</p>
+        </section>
+
+        <!-- Dropdown for selecting formula type (currently only custom) -->
+        <section>
+            <label for="formula-select">Select Formula Type:</label>
+            <select id="formula-select">
+                <option value="custom" selected>Custom (User-Defined)</option>
+            </select>
+        </section>
+
+        <!-- Example formulas to guide users -->
+        <section>
+            <h2>Example Formulas</h2>
+            <ul>
+                <li>
+                    <strong>Fibonacci:</strong> 
+                    <code>n <= 1 ? n : F(n-1) + F(n-2)</code>, 
+                    <em>Base Cases:</em> <code>F(0)=0, F(1)=1</code>
+                </li>
+                <li>
+                    <strong>Factorial:</strong> 
+                    <code>n == 0 ? 1 : n * F(n-1)</code>, 
+                    <em>Base Case:</em> <code>F(0)=1</code>
+                </li>
+                <li>
+                    <strong>Pascal’s Triangle:</strong> 
+                    <code>k == 0 || k == n ? 1 : F(n-1,k-1) + F(n-1,k)</code>, 
+                    <em>Base Case:</em> <code>F(0,0)=1</code>
+                </li>
+            </ul>
+            <p>Copy and paste these into the fields below to test the tool. Adjust the parameters and watch the visualization update.</p>
+        </section>
+
+        <!-- Input fields for the recursive formula and base cases -->
+        <section>
+            <h2>Define Your Recursive Function</h2>
+            <label for="recursive-formula">Recursive Formula (including condition):</label><br>
+            <input type="text" id="recursive-formula" placeholder="e.g., n <= 1 ? n : F(n-1) + F(n-2)"><br><br>
+
+            <label for="base-cases">Base Case(s):</label><br>
+            <input type="text" id="base-cases" placeholder="e.g., F(0)=0, F(1)=1"><br><br>
+            
+            <button id="submit-formula">Parse & Prepare</button>
+        </section>
+
+        <!-- After parsing, display dynamic parameters input -->
+        <section id="parameters-section" style="display: none;">
+            <% if (variables && variables.length > 0) { %>
+                <h2>Set Parameters</h2>
+                <p>Enter values for the identified variable(s) and choose a solving method.</p>
+                <% variables.forEach(variable => { %>
+                    <div>
+                        <label for="input-<%= variable %>">Value for "<%= variable %>":</label>
+                        <input type="text" id="input-<%= variable %>" placeholder="e.g., 10">
+                    </div>
+                <% }); %>
+                <div>
+                    <label for="max-recursions">Max Recursions Allowed (Optional):</label>
+                    <input type="number" id="max-recursions" placeholder="e.g., 100">
+                </div>
+                <div>
+                    <label>Solving Method:</label><br>
+                    <input type="radio" id="bottom-up" name="solving-method" value="bottom-up" checked>
+                    <label for="bottom-up">Bottom-up (Tabulation)</label><br>
+                    <input type="radio" id="top-down" name="solving-method" value="top-down">
+                    <label for="top-down">Top-down (Memoization)</label>
+                </div>
+            <% } %>
+        </section>
+
+        <!-- Controls for visualization -->
+        <section id="controls" style="display: none;">
+            <h2>Control Panel</h2>
+            <p>Use these buttons to visualize the computation steps or view the final result immediately.</p>
+            <button id="restart-button">Restart</button>
+            <button id="view-step-button">View Next Step</button>
+            <button id="view-full-button">Compute & View Full</button>
+        </section>
+
+        <!-- Visualization area -->
+        <section id="visualization-section" style="display: none;">
+            <h2>Visualization</h2>
+            <p>Below is a representation of how the function breaks down into subproblems or how the DP table is filled.</p>
+            <div id="visualization-container"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Dynamic Programming Visualization Tool</p>
+    </footer>
+
+    <script src="/js/script.js"></script>
+</body>
+</html>

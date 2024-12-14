@@ -1,0 +1,33 @@
+<section id="parameters-section">
+    <h2>Parameters of Recursive Formula</h2>
+    <div>
+        <label for="insert-variable">Insert "<%= variable %>":</label>
+        <input type="<%= type === 'array' ? 'text' : 'number' %>" id="insert-variable" placeholder="Enter <%= variable %>">
+    </div>
+    <div>
+        <label for="max-recursions">Max Recursions Allowed:</label>
+        <input type="number" id="max-recursions" placeholder="Enter max recursions">
+    </div>
+    <div>
+        <label for="solving-method">Solving Method:</label>
+        <input type="radio" id="bottom-up" name="solving-method" value="bottom-up" checked>
+        <label for="bottom-up">Bottom-up</label>
+        <input type="radio" id="top-down" name="solving-method" value="top-down">
+        <label for="top-down">Top-down</label>
+    </div>
+
+        <!-- Control Buttons -->
+        <section id="controls">
+            <button id="restart-button">Restart</button>
+            <button id="view-step-button">View One Step</button>
+            <button id="view-full-button">View Full</button>
+        </section>
+
+        <!-- Visualization Section -->
+        <section id="visualization-section">
+            <h2>Visualization</h2>
+            <div id="visualization-container"></div>
+        </section>
+
+</section>
+
