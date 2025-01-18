@@ -12,22 +12,21 @@
     </header>
 
     <main>
-        <!-- Section explaining the purpose -->
         <section>
-            <p>Welcome! This tool allows you to input a recursive formula (in a ternary format), identify its variables, 
-            set base cases, and visualize the computation of the function. Use it to understand how dynamic programming 
-            (memoization or top-down approaches) optimizes repetitive recursive calls.</p>
+            <p> This tool allows you to input a recursive formula, identify its variables,
+                set base cases, and visualize the computation of the function. Use it to understand 
+                how dynamic programming optimizes repetitive recursive calls through either 
+                <strong>Top-down (Memoization)</strong> or <strong>Bottom-up (Tabulation)</strong> methods.</p>
         </section>
 
-        <!-- Dropdown for selecting formula type (currently only custom) -->
-        <section>
+        <!-- <section>
             <label for="formula-select">Select Formula Type:</label>
             <select id="formula-select">
-                <option value="custom" selected>Custom (User-Defined)</option>
+                <option value="custom" selected>Custom</option>
+                <option value="RodCutting">Rod Cutting</option>
             </select>
-        </section>
+        </section> -->
 
-        <!-- Example formulas to guide users -->
         <section>
             <h2>Example Formulas</h2>
             <ul>
@@ -48,9 +47,14 @@
                 </li>
             </ul>
             <p>Copy and paste these into the fields below to test the tool. Adjust the parameters and watch the visualization update.</p>
+            <p>
+                <strong>Note:</strong> 
+                The <em>Bottom-up</em> approach is currently implemented for these three patterns 
+                (Fibonacci, Factorial, and Pascal’s Triangle). Other formulas can still be run 
+                with <em>Top-down</em> but may require extended logic for bottom-up.
+            </p>
         </section>
 
-        <!-- Input fields for the recursive formula and base cases -->
         <section>
             <h2>Define Your Recursive Function</h2>
             <label for="recursive-formula">Recursive Formula (including condition):</label><br>
@@ -62,7 +66,6 @@
             <button id="submit-formula">Parse & Prepare</button>
         </section>
 
-        <!-- After parsing, display dynamic parameters input -->
         <section id="parameters-section" style="display: none;">
             <% if (variables && variables.length > 0) { %>
                 <h2>Set Parameters</h2>
@@ -80,23 +83,21 @@
                 <div>
                     <label>Solving Method:</label><br>
                     <input type="radio" id="top-down" name="solving-method" value="top-down" checked>
-                    <label for="top-down">Top-down (Memoization / Recursion)</label><br>
+                    <label for="top-down">Top-down</label><br>
                     <input type="radio" id="bottom-up" name="solving-method" value="bottom-up">
-                    <label for="bottom-up">Bottom-up (Tabulation)</label>
+                    <label for="bottom-up">Bottom-up</label>
                 </div>
             <% } %>
         </section>
 
-        <!-- Controls for visualization -->
         <section id="controls" style="display: none;">
             <h2>Control Panel</h2>
             <p>Use these buttons to visualize the computation steps or view the final result immediately.</p>
             <button id="restart-button">Restart</button>
             <button id="view-step-button">View Next Step</button>
-            <button id="view-full-button">Compute & View Full</button>
+            <button id="view-full-button">Compute & View Result</button>
         </section>
 
-        <!-- Visualization area -->
         <section id="visualization-section" style="display: none;">
             <h2>Visualization</h2>
             <p>Below is a step-by-step representation of the call stack as the recursion unfolds.</p>
