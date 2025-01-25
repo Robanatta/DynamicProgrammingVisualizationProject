@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const restartButton = document.getElementById('restart-button');
     const viewStepButton = document.getElementById('view-step-button');
 
-    // Dynamic controls
+    // Dynamic controls (play/pause, speed)
     let playPauseButton = null;
     let speedSelect = null;
 
@@ -22,11 +22,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStepIndex = -1;
     let autoPlayInterval = null; // For auto-play
 
-    // Disable "View Next Step" and "Play/Pause" until user clicks "Compute & View Result"
-    // it will be re-enabled once we have steps to show
+    // Disable "View Next Step" (which we'll rename to "Next") until user clicks "Compute & View Result"
     viewStepButton.disabled = true;
 
+    // ----------------------------------------------------------------------
+    // 1) REORDER CONTROLS & RENAME "View Next Step" to "Next"
+    // ----------------------------------------------------------------------
+    // Rename the button text
+    viewStepButton.textContent = 'Next';
 
+    // Clear the #controls panel and manually re-append in desired order
+    controlsSection.innerHTML = '';  
+    // First line: Compute (view-full-button), Restart (restart-button)
+    controlsSection.appendChild(viewFullButton);
+    controlsSection.appendChild(restartButton);
+
+    // Break, then second line: Next (viewStepButton), Play, Speed
+    const brLine = document.createElement('br');
+    controlsSection.appendChild(brLine);
+    controlsSection.appendChild(viewStepButton);
+    // The Play/Pause + Speed will be inserted dynamically by insertPlayPauseControls()
 
     // ----------------------------------------------------------------------
     // Parse the formula, display parameters
@@ -46,36 +61,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ formula }),
             });
-            // Check if the response is not ok
             if (!response.ok) {
                 const error = await response.json();
                 alert(`Error: ${error.error}`);
                 return;
             }
-            // otherwise parse the response
             const result = await response.json();
 
-            // Hide or reset the sections from previous attempts
+            // Hide or reset sections from previous attempts
             parametersSection.innerHTML = '';
             parametersSection.style.display = 'none';
             controlsSection.style.display = 'none';
             visualizationSection.style.display = 'none';
             visualizationContainer.innerHTML = '';
-            // Check if the result has variables
+
+            // Check if we have identified variables
             if (result.variables && result.variables.length > 0) {
                 // Build dynamic param inputs
                 const title = document.createElement('h2');
-                // Set the title
                 title.textContent = 'Set Parameters';
-                // Append the title to the parameters section
                 parametersSection.appendChild(title);
-                // Create a paragraph element
+
                 const info = document.createElement('p');
-                // Set the text content
                 info.textContent = 'Enter values for the identified variable(s) and choose a solving method.';
-                // Append the paragraph to the parameters section
                 parametersSection.appendChild(info);
-                // For each variable, create a label & text input
+
+                // For each variable, create an input
                 result.variables.forEach((variable) => {
                     const div = document.createElement('div');
                     const label = document.createElement('label');
@@ -88,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     parametersSection.appendChild(div);
                 });
 
-                // add "Max Recursions" input
+                // Add "Max Recursions" input
                 const maxRecDiv = document.createElement('div');
                 const maxRecLabel = document.createElement('label');
                 maxRecLabel.textContent = 'Max Recursions Allowed (Optional):';
@@ -134,15 +145,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 parametersSection.appendChild(methodDiv);
 
-                // Show the sections now that we have variables
+                // Show the sections
                 parametersSection.style.display = 'block';
                 controlsSection.style.display = 'block';
                 visualizationSection.style.display = 'block';
 
-                // Insert the play/pause controls (only once)
+                // Insert the Play/Pause controls (only once)
                 insertPlayPauseControls();
 
-                // Because we don't have steps yet, we disable "View Next Step" and "Play/Pause" until user clicks "Compute & View Result"
+                // Disable "Next" and "Play/Pause" until user clicks "Compute & View Result"
                 viewStepButton.disabled = true;
                 if (playPauseButton) {
                     playPauseButton.disabled = true;
@@ -191,13 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
             currentStepIndex = -1;
             visualizationContainer.innerHTML = `
                 <p><strong>Final Result:</strong> ${result.result}</p>
-                <p>(Use "View Next Step" or "Play" to see each step in detail.)</p>
+                <p>(Use "Next" or "Play" to see each step in detail.)</p>
             `;
 
             // reset any auto-play
             clearAutoPlay();
 
-            // now that we have steps, enable "View Next Step" and "Play/Pause" if they exist
+            // now that we have steps, enable "Next" and "Play/Pause"
             viewStepButton.disabled = false;
             if (playPauseButton) {
                 playPauseButton.disabled = false;
@@ -209,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ----------------------------------------------------------------------
-    // "View Next Step"
+    // "Next" (formerly "View Next Step")
     // ----------------------------------------------------------------------
     viewStepButton.addEventListener('click', () => {
         nextStep(); // display next step
@@ -219,12 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // "Restart" => clear everything
     // ----------------------------------------------------------------------
     restartButton.addEventListener('click', () => {
-        // stop auto-play
         clearAutoPlay();
         visualizationContainer.innerHTML = '';
         steps = [];
         currentStepIndex = -1;
-        // disable step/pause
+
+        // disable Next and Play
         viewStepButton.disabled = true;
         if (playPauseButton) {
             playPauseButton.disabled = true;
@@ -236,20 +247,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Next Step logic
     // ----------------------------------------------------------------------
     function nextStep() {
-        // if no steps, show alert
         if (steps.length === 0) {
             alert('No steps recorded. Please compute first.');
             return false;
         }
-        // increment step index
         currentStepIndex++;
-        // if we're at the end, show alert and revert index
         if (currentStepIndex >= steps.length) {
             alert('No more steps.');
             currentStepIndex = steps.length - 1;
             return false;
         }
-        // display the step
         displayStep(currentStepIndex, steps[currentStepIndex]);
         return true;
     }
@@ -264,31 +271,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const panel = document.getElementById('controls');
-        if (!panel) return; // If there's no panel, do nothing
+        if (!panel) return;
 
-        const br = document.createElement('br');
-        panel.appendChild(br);
-
-        // Play/Pause button
+        // Create and append the Play/Pause button
         playPauseButton = document.createElement('button');
         playPauseButton.id = 'play-pause-button';
         playPauseButton.textContent = 'Play';
-        playPauseButton.style.marginLeft = '5px';
+        playPauseButton.style.marginLeft = '10px';
         panel.appendChild(playPauseButton);
-
-        // Initially disabled until we compute the steps
-        playPauseButton.disabled = true;
 
         // Speed label + select
         const speedLabel = document.createElement('label');
         speedLabel.textContent = 'Speed:';
         speedLabel.style.marginLeft = '1rem';
         panel.appendChild(speedLabel);
-        // Speed select
+
         speedSelect = document.createElement('select');
         speedSelect.id = 'speed-select';
         const speeds = [ '0.5x', '1x', '2x', '3x' ];
-        // Add options
         speeds.forEach((s) => {
             const option = document.createElement('option');
             option.value = s;
@@ -299,6 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
         speedSelect.style.marginLeft = '0.5rem';
         panel.appendChild(speedSelect);
 
+        // Initially disabled until we compute steps
+        playPauseButton.disabled = true;
+
         // Add event listeners
         playPauseButton.addEventListener('click', handlePlayPause);
         speedSelect.addEventListener('change', handleSpeedChange);
@@ -308,20 +311,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Play/Pause logic
     // ----------------------------------------------------------------------
     function handlePlayPause() {
-        // If it's still disabled, do nothing
         if (playPauseButton.disabled) return;
-        // If we're not playing yet, we start
         if (!autoPlayInterval) {
             // Start auto-play
             playPauseButton.textContent = 'Pause';
             startAutoPlay();
         } else {
-            // If we are playing, we pause
+            // Pause auto-play
             playPauseButton.textContent = 'Play';
             clearAutoPlay();
         }
     }
-    // If user changes speed while playing, we reset the interval
+
     function handleSpeedChange() {
         if (autoPlayInterval) {
             clearAutoPlay();
@@ -329,7 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // startAutoPlay => sets an interval that calls nextStep based on speed
     function startAutoPlay() {
         const speedVal = speedSelect?.value || '1x';
         let msDelay = 1000; // default
@@ -341,13 +341,12 @@ document.addEventListener('DOMContentLoaded', () => {
         autoPlayInterval = setInterval(() => {
             const ok = nextStep();
             if (!ok) {
-                // done steps
                 clearAutoPlay();
                 playPauseButton.textContent = 'Play';
             }
         }, msDelay);
     }
-    // clearAutoPlay => clears the interval
+
     function clearAutoPlay() {
         if (autoPlayInterval) {
             clearInterval(autoPlayInterval);
@@ -359,13 +358,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // displayStep => draws a single step
     // ----------------------------------------------------------------------
     function displayStep(stepIndex, step) {
-        // Clear old content
         visualizationContainer.innerHTML = '';
-        // Add step counter
+
+        // Step counter
         const stepCounter = document.createElement('p');
         stepCounter.innerHTML = `<strong>Step ${stepIndex + 1} of ${steps.length}</strong>`;
         visualizationContainer.appendChild(stepCounter);
-        // Depending on step.action,it picks how to draw it
+
+        // Dispatch by action
         if (step.action === 'push' || step.action === 'pop') {
             displayTopDownStep(step);
         } else if (step.action === 'fill') {
@@ -379,20 +379,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ----------------------------------------------------------------------
     // Top-Down Step
-    // ----------------------------------------------------------------------
     function displayTopDownStep(step) {
         const explanation = document.createElement('p');
         explanation.classList.add('explanation');
-        // If it's a push, we're calling a new frame
         if (step.action === 'push') {
             explanation.textContent = `PUSH: We are calling a new frame → ${topOfStackConcrete(step)}`;
-        // If it's a pop, we're finishing evaluating a frame
         } else {
             explanation.textContent = `POP: Finished evaluating ${topOfStackConcrete(step)} = ${step.resolvedValue}`;
         }
-        // If there's an evaluation detail, we show it
         if (step.evaluationDetail) {
             const detailDiv = document.createElement('div');
             detailDiv.classList.add('detail');
@@ -400,38 +395,31 @@ document.addEventListener('DOMContentLoaded', () => {
             explanation.appendChild(document.createElement('br'));
             explanation.appendChild(detailDiv);
         }
-        // Add the explanation to the visualization container
         explanation.classList.add('animate-fade');
         visualizationContainer.appendChild(explanation);
-        // If there's a stack,it is showed
+
+        // Show stack
         const stackContainer = document.createElement('div');
         stackContainer.classList.add('stack-container', 'animate-fade');
-        // For each frame in the stack,it creates a div
         if (step.stack) {
             step.stack.forEach((callFrame, idx) => {
                 const frameDiv = document.createElement('div');
                 frameDiv.classList.add('stack-frame');
                 frameDiv.textContent = callFrame.concrete;
-                // If it's the last frame,it is highlighted
                 if (idx === step.stack.length - 1) {
                     frameDiv.classList.add('highlight-frame');
                 }
                 stackContainer.appendChild(frameDiv);
             });
         }
-        // Add the stack container to the visualization container
         visualizationContainer.appendChild(stackContainer);
     }
 
-    // ----------------------------------------------------------------------
-    // Bottom-Up: fill (1D)
-    // ----------------------------------------------------------------------
-    // Display the bottom-up step for a 1D array
+    // Bottom-Up (1D)
     function displayBottomUp1D(step) {
         const explanation = document.createElement('p');
         explanation.classList.add('explanation');
         explanation.textContent = `FILL: Updating dp[${step.index}]`;
-        // If there's an explanation detail, we show it
         if (step.explanation) {
             const detailDiv = document.createElement('div');
             detailDiv.classList.add('detail');
@@ -439,10 +427,9 @@ document.addEventListener('DOMContentLoaded', () => {
             explanation.appendChild(document.createElement('br'));
             explanation.appendChild(detailDiv);
         }
-        // Add the explanation to the visualization container
         explanation.classList.add('animate-fade');
         visualizationContainer.appendChild(explanation);
-        //  Create a table to show the dp array
+
         const dpTable = document.createElement('table');
         dpTable.classList.add('animate-fade');
 
@@ -457,21 +444,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             row.appendChild(cell);
         });
-        // Add the row to the table
         dpTable.appendChild(row);
-        // Add the table to the visualization container
         visualizationContainer.appendChild(dpTable);
     }
 
-    // ----------------------------------------------------------------------
-    // Bottom-Up: fill2D
-    // ----------------------------------------------------------------------
-    // Display the bottom-up step for a 2D array
+    // Bottom-Up (2D)
     function displayBottomUp2D(step) {
         const explanation = document.createElement('p');
         explanation.classList.add('explanation');
         explanation.textContent = `FILL: Updating dp[${step.i}][${step.j}]`;
-        // If there's an explanation detail, it is showed
         if (step.explanation) {
             const detailDiv = document.createElement('div');
             detailDiv.classList.add('detail');
@@ -479,13 +460,11 @@ document.addEventListener('DOMContentLoaded', () => {
             explanation.appendChild(document.createElement('br'));
             explanation.appendChild(detailDiv);
         }
-
         explanation.classList.add('animate-fade');
         visualizationContainer.appendChild(explanation);
 
         const dpTable = document.createElement('table');
         dpTable.classList.add('animate-fade');
-        // For each row in the dp array, it creates a row
         step.dpSnapshot.forEach((rowArray, rowIndex) => {
             const rowTr = document.createElement('tr');
             rowArray.forEach((val, colIndex) => {
@@ -493,20 +472,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.style.padding = '6px 12px';
                 cell.style.border = '1px solid #ccc';
                 cell.textContent = (val === null || val === undefined) ? '∅' : val;
-                // If it's the cell we're updating, it is highlighted
                 if (rowIndex === step.i && colIndex === step.j) {
                     cell.classList.add('highlight-frame');
                 }
-                // Add the cell to the row
                 rowTr.appendChild(cell);
             });
-            // Add the row to the table
             dpTable.appendChild(rowTr);
         });
-        // Add the table to the visualization container
         visualizationContainer.appendChild(dpTable);
     }
-    // Helper function to get the top of the stack
+
     function topOfStackConcrete(step) {
         if (!step.stack || step.stack.length === 0) return 'N/A';
         return step.stack[step.stack.length - 1].concrete;
